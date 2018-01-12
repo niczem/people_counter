@@ -1,72 +1,19 @@
 <?php
-
+error_reporting(0);
 include('./db_class.php');
+include('functions.php');
 
 
 
-
-function random_pronounceable_word( $length = 6 ) {
-       
-        // consonant sounds
-        $cons = array(
-                // single consonants. Beware of Q, it's often awkward in words
-                'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm',
-                'n', 'p', 'r', 's', 't', 'v', 'w', 'x', 'z',
-                // possible combinations excluding those which cannot start a word
-                'pt', 'gl', 'gr', 'ch', 'ph', 'ps', 'sh', 'st', 'th', 'wh',
-        );
-       
-        // consonant combinations that cannot start a word
-        $cons_cant_start = array(
-                'ck', 'cm',
-                'dr', 'ds',
-                'ft',
-                'gh', 'gn',
-                'kr', 'ks',
-                'ls', 'lt', 'lr',
-                'mp', 'mt', 'ms',
-                'ng', 'ns',
-                'rd', 'rg', 'rs', 'rt',
-                'ss',
-                'ts', 'tch',
-        );
-       
-        // wovels
-        $vows = array(
-                // single vowels
-                'a', 'e', 'i', 'o', 'u', 'y',
-                // vowel combinations your language allows
-                'ee', 'oa', 'oo',
-        );
-       
-        // start by vowel or consonant ?
-        $current = ( mt_rand( 0, 1 ) == '0' ? 'cons' : 'vows' );
-       
-        $word = '';
-               
-        while( strlen( $word ) < $length ) {
-       
-                // After first letter, use all consonant combos
-                if( strlen( $word ) == 2 )
-                        $cons = array_merge( $cons, $cons_cant_start );
- 
-                 // random sign from either $cons or $vows
-                $rnd = ${$current}[ mt_rand( 0, count( ${$current} ) -1 ) ];
-               
-                // check if random sign fits in word length
-                if( strlen( $word . $rnd ) <= $length ) {
-                        $word .= $rnd;
-                        // alternate sounds
-                        $current = ( $current == 'cons' ? 'vows' : 'cons' );
-                }
-        }
-       
-        return $word;
-}
 
 
 
 $db = new db();
+
+
+function getPersonsForBoat($boat_id){
+  $db->select();
+}
 
 if(isset($_POST['submitted'])){
 
@@ -141,6 +88,7 @@ if(isset($_POST['submitted'])){
     <title>Bare - Start Bootstrap Template</title>
 
     <!-- Bootstrap core CSS -->
+    <link href="./vendor/jquery-ui/jquery-ui.css" rel="stylesheet">
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
@@ -148,6 +96,14 @@ if(isset($_POST['submitted'])){
       body {
         padding-top: 54px;
       }
+    
+    .trick-inline .form-check { 
+      float:left; padding-right:15px;
+    }
+    .archived{
+      display:none;
+    }
+    .form-check.nation {margin-bottom:1.5rem;}
       @media (min-width: 992px) {
         body {
           padding-top: 56px;
@@ -188,7 +144,7 @@ if(isset($_POST['submitted'])){
 
 <?php
 
-$boats = $db->query('SELECT * FROM boats');
+$boats = getBoats();
 ?>
           <form action="./" method="post">
             <fieldset class="form-group">
@@ -198,14 +154,15 @@ $boats = $db->query('SELECT * FROM boats');
                 <?php
                 echo '<select name="boat">';
                 foreach($boats AS $boat){
-                  echo '<option value="'.$boat['id'].'">'.date('d.m. H:i', $boat['timestamp']).' - '.$boat['boat_code'].'</option>';
+                  if($boat['active'] == 1)
+                  echo '<option value="'.$boat['id'].'">'.getBoatTitle($boat).'</option>';
                 }
                 echo '</select>';
                 ?>
                 </label>
               </div>
             </fieldset>
-            <fieldset class="form-group">
+            <fieldset class="form-group trick-inline">
               <legend>Please Choose</legend>
               <div class="form-check">
                 <label class="form-check-label">
@@ -220,7 +177,7 @@ $boats = $db->query('SELECT * FROM boats');
                 </label>
               </div>
             </fieldset>
-            <fieldset class="form-group">
+            <fieldset class="form-group trick-inline">
               <legend>Please Choose</legend>
               <div class="form-check">
                 <label class="form-check-label">
@@ -241,28 +198,10 @@ $boats = $db->query('SELECT * FROM boats');
                 </label>
               </div>
             </fieldset>
-            <div class="form-check">
+            <div class="form-check nation">
               <label class="form-check-label">
-                <input type="text"  name="nationality" value="1" class="form-check-input" id="nationality">
+                <input type="text"  name="nationality" placeholder="nationality" class="form-check-input" id="nationality">
                 Nationality
-              </label>
-            </div>
-            <div class="form-check">
-              <label class="form-check-label">
-                <input type="checkbox"  name="needs_protection"  value="1" class="form-check-input" id="scabies">
-                Needs Protection
-              </label>
-            </div>
-            <div class="form-check">
-              <label class="form-check-label">
-                <input type="checkbox"  name="medical_case" value="1"  class="form-check-input" id="medical_case">
-                Medical Case
-              </label>
-            </div>
-            <div class="form-check">
-              <label class="form-check-label">
-                <input type="checkbox" class="form-check-input" name="scabies" value="1" id="scabies">
-                Scabies
               </label>
             </div>
             <div class="form-check">
@@ -299,52 +238,87 @@ $boats = $db->query('SELECT * FROM boats');
             <tbody>
             <?php
 
+
             $boats_count = [];
             foreach($boats AS $boat){
 
 
-
+              unset($boat_array);
               //create initial array with boat information
-              $boat_array = array('id'=>$boat['id'],'active'=>$boat['active'],'scabies'=>0,'medical_case'=>0,'needs_protection'=>0,'male'=>0,'female'=>0);
+              $boat_array = array('id'=>$boat['id'],'active'=>$boat['active'],'pregnant_woman'=>0,'alone_traveling_woman'=>0,'unaccopanied_minor'=>0,'male'=>0,'female'=>0);
+
+              $nationalities = array();
               //get people from boat
-              $persons_on_board = $db->select('people_on_board', array('boat_id', $boat['id']));
+              $persons_on_board = $db->shiftResult($db->select('people_on_board', array('boat_id', $boat['id']), null, array('id', 'DESC')),'id');
               foreach($persons_on_board AS $person_on_board){
 
                 //add counts to boat id
-                if($person_on_board['scabies'])
-                  $boat_array['scabies']++;
-                if($person_on_board['medical_case'])
-                  $boat_array['medical_case']++;
-                if($person_on_board['needs_protection'])
-                  $boat_array['needs_protection']++;
+                if($person_on_board['pregnant_woman'])
+                  $boat_array['pregnant_woman']++;
+                if($person_on_board['alone_traveling_woman'])
+                  $boat_array['alone_traveling_woman']++;
+                if($person_on_board['unaccopanied_minor'])
+                  $boat_array['unaccopanied_minor']++;
                 if($person_on_board['sex'] == 'm')
                   $boat_array['male']++;
                 if($person_on_board['sex'] == 'f')
                   $boat_array['female']++;
-              }
-              //push to final array
-              $boats_count[$boat->timestamp.' '.$boat['boat_code']] = $boat_array;
-            }?>
 
+                $nationality = $person_on_board['nationality'];
+
+
+                if($nationality == '')
+                    $nationality = 'unknown';
+
+                if($nationalities[$nationality]){
+                  $nationalities[$nationality]++;
+                }else{
+                 $nationalities[$nationality] = 1;
+                }
+              }
+
+              $boat_array['nationalities'] = $nationalities;
+
+              //push to final array
+              $title = getBoatTitle($boat);
+              $boats_count[$title] = $boat_array;
+            }
+            ?>
               <tr>
                 <td>Boat</td>
                 <td>Male</td>
                 <td>Female</td>
-                <td>Medical Cases</td>
-                <td>Scabies</td>
-                <td>Needs Protection</td>
+                <td>Alone Traveling Woman</td>
+                <td>pregnant_woman</td>
+                <td>unaccopanied_minor</td>
+                <td>Nationalities</td>
                 <td>Archive</td>
               </tr>
             <?php
             foreach($boats_count AS $index=>$boat_count){
+              $class = '';
+
+              if($boat_count['active'] != 1){
+                $class = 'archived';
+              }
               ?>
-              <tr>
-                <td><?php echo  $index?></td>
+              <tr class="<?php echo $class;?>">
+                <td><a href=""><?php echo  $index?></a></td>
                 <td><?php echo  $boat_count['male']?></td>
                 <td><?php echo  $boat_count['female']?></td>
-                <td><?php echo  $boat_count['medical_case']?></td>
-                <td><?php echo  $boat_count['scabies']?></td>
-                <td><?php echo  $boat_count['needs_protection'];?></td>
+                <td><?php echo  $boat_count['pregnant_woman']?></td>
+                <td><?php echo  $boat_count['alone_traveling_woman']?></td>
+                <td><?php echo  $boat_count['unaccopanied_minor']?></td>
+                <td>
+
+                <?php
+
+                foreach($boat_count['nationalities'] AS $name => $count){
+                  echo $name.' - '.$count.'<br/>';
+                }
+                ?>
+
+                </td>
                 <?php
                 if($boat_count['active'] == 1){
                   ?>
@@ -363,7 +337,11 @@ $boats = $db->query('SELECT * FROM boats');
             ?>
             </tbody>
           </table>
-          <a href="#" style="margin-top:30px;">also show archived boats</a>
+
+          <div class="boat_details">
+
+          </div>
+          <a href="#" style="margin-top:30px;" onclick="$('.archived').show()">also show archived boats</a>
         </div>
 
 
@@ -372,8 +350,30 @@ $boats = $db->query('SELECT * FROM boats');
 
     <!-- Bootstrap core JavaScript -->
     <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/jquery-ui/jquery-ui.js"></script>
     <script src="vendor/popper/popper.min.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script>
+    $( function() {
+      var availableTags = [
+        'Nigeria',
+        'Syria',
+        'Bangladesh',
+        'Libya',
+    'Namibia',
+    'Gambia',
+        'Somalia',
+        'Eritrea',
+        'Marocco', 
+    'Tunesia',
+        'Mali',
+        'Ivory coast'
+      ];
+      $( "#nationality" ).autocomplete({
+        source: availableTags
+      });
+    } );
+    </script>
     <script>
 
     function toggleViews(){

@@ -218,7 +218,6 @@ class db{
                 //echo "SELECT $columnQuery FROM `$table` $WHERE $ORDER $LIMIT";
                 $query = "SELECT $columnQuery FROM `$table` $WHERE $ORDER $LIMIT";
                 
-                
                 foreach($this->pdoDB->query($query) AS $data){
                     $return[] = $data;
                 }
