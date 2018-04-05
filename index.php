@@ -11,8 +11,10 @@ include('functions.php');
 $db = new db();
 
 
-function getPersonsForBoat($boat_id){
-  $db->select();
+function getCurrentBoatEmbarkationCount($boat_id) {
+	$people_count = $db->query("select count(*) as people_count from people_on_board where boat_id = '$boat_id'");
+	var_dump($people_count);
+	return $people_count['people_count'];
 }
 
 if(isset($_POST['submitted'])){
@@ -49,7 +51,6 @@ if(isset($_POST['submitted'])){
         'unaccopanied_minor'=>$_POST['unaccopanied_minor'],
         'pregnant_woman'=>$_POST['pregnant_woman'])
       );
-    echo $id;
   }else{
     echo '<center>Please fill out all the fields!</center>';
   }
@@ -360,14 +361,23 @@ $boats = getBoats();
         'Syria',
         'Bangladesh',
         'Libya',
-    'Namibia',
-    'Gambia',
+		'Namibia',
+		'Gambia',
         'Somalia',
         'Eritrea',
-        'Marocco', 
-    'Tunesia',
+        'Morocco', 
+		'Tunesia',
         'Mali',
-        'Ivory coast'
+        'Ivory coast',
+		'Guinea Conakry',
+		'Guinea Bissau',
+		'Tibet',
+		'Ethiopia',
+		'Burkina Faso',
+		'Cameroon',
+		'Senegal',
+		'Sierra Leone',
+		'Sudan'
       ];
       $( "#nationality" ).autocomplete({
         source: availableTags
