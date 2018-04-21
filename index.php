@@ -189,13 +189,26 @@ $boats = getBoats();
               <div class="form-check">
               <label class="form-check-label">
                   <input type="radio" value="5-18" class="form-check-input" name="age" id="optionsRadios2">
-                  5 - 18
+                  6 - 10
                 </label>
               </div>
               <div class="form-check">
+              <label class="form-check-label">
+                  <input type="radio" value="5-18" class="form-check-input" name="age" id="optionsRadios2">
+                  11 - 15
+                </label>
+              </div>
+			  <div class="form-check">
+              <label class="form-check-label">
+                  <input type="radio" value="5-18" class="form-check-input" name="age" id="optionsRadios2">
+                  16 - 18
+                </label>
+              </div>
+
+              <div class="form-check">
                 <label class="form-check-label">
                   <input type="radio" value="18+" class="form-check-input" name="age" id="optionsRadios2">
-                  18+
+                  > 18
                 </label>
               </div>
             </fieldset>
