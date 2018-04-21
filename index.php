@@ -377,7 +377,9 @@ $boats = getBoats();
 		'Cameroon',
 		'Senegal',
 		'Sierra Leone',
-		'Sudan'
+		'Sudan',
+		'Liberia',
+		'Chad'
       ];
       $( "#nationality" ).autocomplete({
         source: availableTags
